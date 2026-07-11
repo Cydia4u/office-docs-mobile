@@ -20,7 +20,7 @@ class DashboardScreen extends StatelessWidget {
       ),
       body: Row(
         children: [
-          const AppSidebar(),
+          const AppSidebar(selectedIndex: 0),
           const VerticalDivider(width: 1),
           Expanded(
             child: Padding(

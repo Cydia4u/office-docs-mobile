@@ -1,14 +1,36 @@
 import 'package:flutter/material.dart';
 import '../models/dashboard_stat.dart';
+import '../screens/categories/category_list_screen.dart';
+import '../screens/dashboard/dashboard_screen.dart';
+import '../screens/documents/document_list_screen.dart';
+import '../screens/documents/upload_document_screen.dart';
+import '../screens/offices/office_list_screen.dart';
 
 class AppSidebar extends StatelessWidget {
-  const AppSidebar({super.key});
+  final int selectedIndex;
+
+  const AppSidebar({super.key, required this.selectedIndex});
+
+  void _go(BuildContext context, int index) {
+    final screens = [
+      const DashboardScreen(),
+      const OfficeListScreen(),
+      const CategoryListScreen(),
+      const DocumentListScreen(),
+      const UploadDocumentScreen(),
+    ];
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => screens[index]),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return NavigationRail(
-      selectedIndex: 0,
+      selectedIndex: selectedIndex,
       labelType: NavigationRailLabelType.all,
+      onDestinationSelected: (index) => _go(context, index),
       destinations: const [
         NavigationRailDestination(
           icon: Icon(Icons.dashboard_outlined),
@@ -31,9 +53,9 @@ class AppSidebar extends StatelessWidget {
           label: Text('ឯកសារ'),
         ),
         NavigationRailDestination(
-          icon: Icon(Icons.search_outlined),
-          selectedIcon: Icon(Icons.search),
-          label: Text('ស្វែងរក'),
+          icon: Icon(Icons.upload_file_outlined),
+          selectedIcon: Icon(Icons.upload_file),
+          label: Text('បញ្ចូលឯកសារ'),
         ),
       ],
     );
