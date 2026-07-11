@@ -1,18 +1,61 @@
 import 'package:flutter/material.dart';
+import '../../core/services/office_service.dart';
 import '../../models/category_model.dart';
 import '../../widgets/app_sidebar.dart';
 
-class CategoryListScreen extends StatelessWidget {
+class CategoryListScreen extends StatefulWidget {
   const CategoryListScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    const categories = [
-      CategoryModel(id: 1, officeName: 'ការិយាល័យបុគ្គលិក', nameKh: 'បញ្ជីរាយនាម', code: 'CAT-001', status: true),
-      CategoryModel(id: 2, officeName: 'ការិយាល័យបុគ្គលិក', nameKh: 'របាយការណ៍ចំនួនទ័ព', code: 'CAT-002', status: true),
-      CategoryModel(id: 3, officeName: 'ការិយាល័យហិរញ្ញវត្ថុ', nameKh: 'បញ្ជីចំណាយ', code: 'CAT-003', status: false),
-    ];
+  State<CategoryListScreen> createState() => _CategoryListScreenState();
+}
 
+class _CategoryListScreenState extends State<CategoryListScreen> {
+  final OfficeService _officeService = OfficeService();
+  bool _loading = true;
+  String? _error;
+  List<CategoryModel> _categories = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final data = await _officeService.fetchCategories();
+      final categories = data.map((item) {
+        return CategoryModel(
+          id: item['id'] as int,
+          officeName: item['office_name']?.toString() ?? '',
+          nameKh: item['name_kh']?.toString() ?? '',
+          code: item['code']?.toString() ?? '',
+          status: item['status'] == true,
+        );
+      }).toList();
+
+      if (!mounted) return;
+      setState(() {
+        _categories = categories;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'មិនអាចទាញយកប្រភេទឯកសារបានទេ។';
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('ប្រភេទឯកសារ')),
       body: Row(
@@ -38,46 +81,60 @@ class CategoryListScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 16),
                       FilledButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.add),
-                        label: const Text('បន្ថែម'),
+                        onPressed: _loadCategories,
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('ផ្ទុកឡើងវិញ'),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Expanded(
-                    child: Card(
-                      child: SingleChildScrollView(
-                        child: DataTable(
-                          columns: const [
-                            DataColumn(label: Text('ល.រ')),
-                            DataColumn(label: Text('ការិយាល័យ')),
-                            DataColumn(label: Text('ប្រភេទឯកសារ')),
-                            DataColumn(label: Text('កូដ')),
-                            DataColumn(label: Text('ស្ថានភាព')),
-                          ],
-                          rows: categories
-                              .map(
-                                (category) => DataRow(
-                                  cells: [
-                                    DataCell(Text(category.id.toString())),
-                                    DataCell(Text(category.officeName)),
-                                    DataCell(Text(category.nameKh)),
-                                    DataCell(Text(category.code)),
-                                    DataCell(Text(category.status ? 'ដំណើរការ' : 'បិទ')),
-                                  ],
-                                ),
-                              )
-                              .toList(),
-                        ),
-                      ),
-                    ),
-                  ),
+                  Expanded(child: _buildBody()),
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(child: Text(_error!));
+    }
+
+    if (_categories.isEmpty) {
+      return const Center(child: Text('មិនមានទិន្នន័យប្រភេទឯកសារទេ'));
+    }
+
+    return Card(
+      child: SingleChildScrollView(
+        child: DataTable(
+          columns: const [
+            DataColumn(label: Text('ល.រ')),
+            DataColumn(label: Text('ការិយាល័យ')),
+            DataColumn(label: Text('ប្រភេទឯកសារ')),
+            DataColumn(label: Text('កូដ')),
+            DataColumn(label: Text('ស្ថានភាព')),
+          ],
+          rows: _categories
+              .map(
+                (category) => DataRow(
+                  cells: [
+                    DataCell(Text(category.id.toString())),
+                    DataCell(Text(category.officeName)),
+                    DataCell(Text(category.nameKh)),
+                    DataCell(Text(category.code)),
+                    DataCell(Text(category.status ? 'ដំណើរការ' : 'បិទ')),
+                  ],
+                ),
+              )
+              .toList(),
+        ),
       ),
     );
   }
