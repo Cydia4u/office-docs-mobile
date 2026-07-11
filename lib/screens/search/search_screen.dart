@@ -1,36 +1,73 @@
 import 'package:flutter/material.dart';
+import '../../core/services/document_service.dart';
 import '../../models/document_model.dart';
 import '../../widgets/app_sidebar.dart';
 import '../documents/document_detail_screen.dart';
 
-class SearchScreen extends StatelessWidget {
+class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    const results = [
-      DocumentModel(
-        id: 1,
-        title: 'បញ្ជីរាយនាមប្រចាំខែ',
-        documentNumber: 'DOC-001',
-        officeName: 'ការិយាល័យបុគ្គលិក',
-        categoryName: 'បញ្ជីរាយនាម',
-        fileType: 'PDF',
-        uploadedBy: 'Admin',
-        createdAt: '2026-07-11',
-      ),
-      DocumentModel(
-        id: 2,
-        title: 'របាយការណ៍ចំណាយ',
-        documentNumber: 'DOC-002',
-        officeName: 'ការិយាល័យហិរញ្ញវត្ថុ',
-        categoryName: 'បញ្ជីចំណាយ',
-        fileType: 'XLSX',
-        uploadedBy: 'Manager',
-        createdAt: '2026-07-10',
-      ),
-    ];
+  State<SearchScreen> createState() => _SearchScreenState();
+}
 
+class _SearchScreenState extends State<SearchScreen> {
+  final DocumentService _documentService = DocumentService();
+  final TextEditingController _searchController = TextEditingController();
+
+  bool _loading = false;
+  String? _error;
+  List<DocumentModel> _results = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _search();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _search() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final data = await _documentService.searchDocuments(query: _searchController.text);
+      final results = data.map((item) {
+        return DocumentModel(
+          id: item['id'] as int,
+          title: item['title']?.toString() ?? '',
+          documentNumber: item['document_number']?.toString() ?? '',
+          officeName: item['office_name']?.toString() ?? '',
+          categoryName: item['category_name']?.toString() ?? '',
+          fileType: item['file_type']?.toString() ?? '',
+          uploadedBy: item['uploaded_by']?.toString() ?? '',
+          createdAt: item['created_at']?.toString() ?? '',
+        );
+      }).toList();
+
+      if (!mounted) return;
+      setState(() {
+        _results = results;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'មិនអាចស្វែងរកឯកសារបានទេ។';
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('ស្វែងរកឯកសារ')),
       body: Row(
@@ -43,86 +80,70 @@ class SearchScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Wrap(
-                    spacing: 16,
-                    runSpacing: 16,
+                  Row(
                     children: [
-                      const SizedBox(
-                        width: 240,
+                      Expanded(
                         child: TextField(
-                          decoration: InputDecoration(
+                          controller: _searchController,
+                          decoration: const InputDecoration(
                             labelText: 'ចំណងជើង / លេខឯកសារ',
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.search),
                           ),
+                          onSubmitted: (_) => _search(),
                         ),
                       ),
-                      SizedBox(
-                        width: 220,
-                        child: DropdownButtonFormField<String>(
-                          decoration: const InputDecoration(
-                            labelText: 'ការិយាល័យ',
-                            border: OutlineInputBorder(),
-                          ),
-                          items: const [
-                            DropdownMenuItem(value: 'all', child: Text('ទាំងអស់')),
-                            DropdownMenuItem(value: 'staff', child: Text('ការិយាល័យបុគ្គលិក')),
-                            DropdownMenuItem(value: 'finance', child: Text('ការិយាល័យហិរញ្ញវត្ថុ')),
-                          ],
-                          onChanged: (_) {},
-                        ),
-                      ),
-                      SizedBox(
-                        width: 220,
-                        child: DropdownButtonFormField<String>(
-                          decoration: const InputDecoration(
-                            labelText: 'ប្រភេទឯកសារ',
-                            border: OutlineInputBorder(),
-                          ),
-                          items: const [
-                            DropdownMenuItem(value: 'all', child: Text('ទាំងអស់')),
-                            DropdownMenuItem(value: 'list', child: Text('បញ្ជីរាយនាម')),
-                            DropdownMenuItem(value: 'report', child: Text('របាយការណ៍')),
-                          ],
-                          onChanged: (_) {},
-                        ),
-                      ),
+                      const SizedBox(width: 16),
                       FilledButton.icon(
-                        onPressed: () {},
+                        onPressed: _search,
                         icon: const Icon(Icons.search),
                         label: const Text('ស្វែងរក'),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Expanded(
-                    child: Card(
-                      child: ListView.separated(
-                        itemCount: results.length,
-                        separatorBuilder: (_, __) => const Divider(height: 1),
-                        itemBuilder: (context, index) {
-                          final doc = results[index];
-                          return ListTile(
-                            title: Text(doc.title),
-                            subtitle: Text('${doc.documentNumber} • ${doc.officeName} • ${doc.fileType}'),
-                            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => DocumentDetailScreen(document: doc),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                  ),
+                  Expanded(child: _buildBody()),
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(child: Text(_error!));
+    }
+
+    if (_results.isEmpty) {
+      return const Center(child: Text('មិនមានលទ្ធផលទេ'));
+    }
+
+    return Card(
+      child: ListView.separated(
+        itemCount: _results.length,
+        separatorBuilder: (_, __) => const Divider(height: 1),
+        itemBuilder: (context, index) {
+          final doc = _results[index];
+          return ListTile(
+            title: Text(doc.title),
+            subtitle: Text('${doc.documentNumber} • ${doc.officeName} • ${doc.fileType}'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => DocumentDetailScreen(documentId: doc.id),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }
