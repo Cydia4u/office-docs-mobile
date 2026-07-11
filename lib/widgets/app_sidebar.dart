@@ -5,6 +5,8 @@ import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/documents/document_list_screen.dart';
 import '../screens/documents/upload_document_screen.dart';
 import '../screens/offices/office_list_screen.dart';
+import '../screens/search/search_screen.dart';
+import '../screens/settings/settings_screen.dart';
 
 class AppSidebar extends StatelessWidget {
   final int selectedIndex;
@@ -18,6 +20,8 @@ class AppSidebar extends StatelessWidget {
       const CategoryListScreen(),
       const DocumentListScreen(),
       const UploadDocumentScreen(),
+      const SearchScreen(),
+      const SettingsScreen(),
     ];
 
     Navigator.of(context).pushReplacement(
@@ -56,6 +60,16 @@ class AppSidebar extends StatelessWidget {
           icon: Icon(Icons.upload_file_outlined),
           selectedIcon: Icon(Icons.upload_file),
           label: Text('បញ្ចូលឯកសារ'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.search_outlined),
+          selectedIcon: Icon(Icons.search),
+          label: Text('ស្វែងរក'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.settings_outlined),
+          selectedIcon: Icon(Icons.settings),
+          label: Text('ការកំណត់'),
         ),
       ],
     );
