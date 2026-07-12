@@ -5,5 +5,6 @@ class ApiConstants {
   static const String me = '/me';
   static const String offices = '/offices';
   static const String categories = '/document-categories';
+  static const String groups = '/document-groups';
   static const String documents = '/documents';
 }

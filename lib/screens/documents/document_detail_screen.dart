@@ -35,10 +35,13 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
       final document = DocumentModel(
         id: item['id'] as int,
         title: item['title']?.toString() ?? '',
+        description: item['description']?.toString() ?? '',
         documentNumber: item['document_number']?.toString() ?? '',
         officeName: item['office_name']?.toString() ?? '',
         categoryName: item['category_name']?.toString() ?? '',
+        groupName: item['group_name']?.toString() ?? '',
         fileType: item['file_type']?.toString() ?? '',
+        fileUrl: item['file_url']?.toString() ?? '',
         uploadedBy: item['uploaded_by']?.toString() ?? '',
         createdAt: item['created_at']?.toString() ?? '',
       );
@@ -100,15 +103,27 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
             const SizedBox(height: 16),
             _infoRow('លេខឯកសារ', document.documentNumber),
             _infoRow('ការិយាល័យ', document.officeName),
-            _infoRow('ប្រភេទឯកសារ', document.categoryName),
-            _infoRow('ប្រភេទ File', document.fileType),
+            _infoRow('ផ្នែក / ប្រភេទ', document.categoryName),
+            _infoRow('ក្រុម', document.groupName),
+            _infoRow('ប្រភេទ File', document.fileType.toUpperCase()),
             _infoRow('អ្នកបញ្ចូល', document.uploadedBy),
             _infoRow('កាលបរិច្ឆេទ', document.createdAt),
+            if (document.description.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              const Divider(),
+              const SizedBox(height: 8),
+              Text(
+                'សេចក្ដីពិពណ៌នា',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Text(document.description),
+            ],
             const SizedBox(height: 24),
             Row(
               children: [
                 FilledButton.icon(
-                  onPressed: () {},
+                  onPressed: document.fileUrl.isNotEmpty ? () {} : null,
                   icon: const Icon(Icons.download),
                   label: const Text('ទាញយក'),
                 ),
